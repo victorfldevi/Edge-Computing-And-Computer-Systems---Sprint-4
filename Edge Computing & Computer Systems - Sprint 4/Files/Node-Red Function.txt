@@ -1,0 +1,36 @@
+var currentDate = new Date();
+
+var B = {
+    payload: [{
+        "variable": "humidity",
+        "unit": "%",
+        "value": msg.payload.humidPercentage.toString()
+    },
+    {
+        "variable": "temperature",
+        "unit": "°C",
+        "value": msg.payload.tempSens.toString()
+    }, 
+    {
+        "variable": "light",
+        "unit": "klux",
+        "value": msg.payload.luxValue.toString()
+    },
+    {
+        "variable": "humidity_led",
+        "unit": "",
+        "value": msg.payload.humidLed.toString()
+    },
+    {
+        "variable": "temperature_led",
+        "unit": "",
+        "value": msg.payload.tempLed.toString()
+    },
+    {
+        "variable": "light_led",
+        "unit": "",
+        "value": msg.payload.lightLed.toString()
+    }]
+};
+
+return B;

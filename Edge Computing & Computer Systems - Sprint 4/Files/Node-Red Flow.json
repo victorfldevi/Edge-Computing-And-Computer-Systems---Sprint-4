@@ -1,0 +1,141 @@
+[
+    {
+        "id": "923064a9c0521630",
+        "type": "tab",
+        "label": "Sprint 4 - Node-Red Flow",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "9753905747f58e41",
+        "type": "mqtt out",
+        "z": "923064a9c0521630",
+        "name": "",
+        "topic": "tago/data/post",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "0a24111e80ff3636",
+        "x": 720,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "e681461ed3aa75b1",
+        "type": "json",
+        "z": "923064a9c0521630",
+        "name": "",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 370,
+        "y": 300,
+        "wires": [
+            [
+                "50dbc903c2ba5def"
+            ]
+        ]
+    },
+    {
+        "id": "50dbc903c2ba5def",
+        "type": "function",
+        "z": "923064a9c0521630",
+        "name": "function 1",
+        "func": "var currentDate = new Date();\n\nvar B = {\n    payload: [{\n        \"variable\": \"humidity\",\n        \"unit\": \"%\",\n        \"value\": msg.payload.humidPercentage.toString()\n    },\n    {\n        \"variable\": \"temperature\",\n        \"unit\": \"°C\",\n        \"value\": msg.payload.tempSens.toString()\n    }, \n    {\n        \"variable\": \"light\",\n        \"unit\": \"klux\",\n        \"value\": msg.payload.luxValue.toString()\n    },\n    {\n        \"variable\": \"humidity_led\",\n        \"unit\": \"\",\n        \"value\": msg.payload.humidLed.toString()\n    },\n    {\n        \"variable\": \"temperature_led\",\n        \"unit\": \"\",\n        \"value\": msg.payload.tempLed.toString()\n    },\n    {\n        \"variable\": \"light_led\",\n        \"unit\": \"\",\n        \"value\": msg.payload.lightLed.toString()\n    }]\n};\n\nreturn B;\n",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 520,
+        "y": 300,
+        "wires": [
+            [
+                "9753905747f58e41",
+                "dce9919a7d8401a8"
+            ]
+        ]
+    },
+    {
+        "id": "dce9919a7d8401a8",
+        "type": "debug",
+        "z": "923064a9c0521630",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 700,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "a6884f3ad9dd5d27",
+        "type": "serial in",
+        "z": "923064a9c0521630",
+        "name": "",
+        "serial": "6de415f1dac11a9a",
+        "x": 230,
+        "y": 300,
+        "wires": [
+            [
+                "e681461ed3aa75b1"
+            ]
+        ]
+    },
+    {
+        "id": "0a24111e80ff3636",
+        "type": "mqtt-broker",
+        "name": "",
+        "broker": "mqtt.tago.io",
+        "port": "1883",
+        "clientid": "ClientSprint4",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "6de415f1dac11a9a",
+        "type": "serial-port",
+        "serialport": "COM5",
+        "serialbaud": "9600",
+        "databits": "8",
+        "parity": "none",
+        "stopbits": "1",
+        "waitfor": "",
+        "dtr": "none",
+        "rts": "none",
+        "cts": "none",
+        "dsr": "none",
+        "newline": "\\n",
+        "bin": "false",
+        "out": "char",
+        "addchar": "",
+        "responsetimeout": "10000"
+    }
+]

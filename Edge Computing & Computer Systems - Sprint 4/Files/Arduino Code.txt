@@ -1,0 +1,194 @@
+#include <LiquidCrystal.h>
+#include <ArduinoJson.h>
+
+// Store Ambient Sensor values
+int volSens = 0;
+int tempSens = 0;
+int lightSens = 0;
+
+// Store regulators values
+int volAdj = 0;
+int tempAdj = 0;
+int lightAdj = 0;
+
+// Define the pins used by the LCD screen
+const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
+
+// Send the pin's signal to the respective LCD display input port
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+
+// Store the values of char concats outside loop() function, 
+// so they dont get reset (only rewritten)
+String finalString1;
+String finalString2;
+
+// Store values to verify if there's changes to finalString
+// to avoid LCD visual bugs
+String initString1;
+String initString2;
+
+// Store the converted values from sensors
+int humidPercentage = 0;
+int tempValue = 0;
+int luxValue = 0;
+
+// Store the limit value defined by the user for each regulator
+int minHumidPercentage = 0;
+int maxTempC = 0;
+int minLuxValue = 0;
+
+// Values for temperature conversion
+float c1 = 1.009249522e-03, c2 = 2.378405444e-04, c3 = 2.019202697e-07;
+
+void setup()
+{
+  // Start the Serial Monitor
+  Serial.begin(9600);
+  
+  // Start the LCD display
+  lcd.begin(16, 2);
+  
+  // Delegate each led's pin
+  pinMode(8, OUTPUT);
+  pinMode(9, OUTPUT);
+  pinMode(10, OUTPUT);
+}
+
+void loop()
+{
+  	// Grab and stores the value of each sensor
+  	volSens = analogRead(A0);
+  	tempSens = analogRead(A1);
+  	lightSens = analogRead(A2);
+  	
+  	// Grab and stores the value of each regulator
+   	volAdj = analogRead(A3);
+  	tempAdj = analogRead(A4);
+  	lightAdj = analogRead(A5);
+  
+  	// Convert voltage to percentage
+  	humidPercentage = map(volSens, 876, 221, 0, 100);
+  
+    // Convert voltage to analog
+    float R = log(10000 * (1023/(float)tempSens - 1));
+
+  	// Convert analog to degrees
+  	tempValue = (int)(1.0 / (c1 + c2 * R + c3*R*R*R) - 273.15);
+  
+  	// Convert voltage to kilolux (1000 lumens per square meter)
+  	luxValue = (sensorRawToDaylight(lightSens));
+  
+  	// Convert the analog value from regulators to their
+  	// correspondent sensor
+  	minHumidPercentage = map(volAdj, 1023, 0, 100, 0);
+  	maxTempC = map(tempAdj, 1023, 0, 124, 0);
+  	minLuxValue = map(lightAdj, 1023, 0, 99, 0);
+  
+  	// Turn leds on if condition is met and off if its not
+	  ledOnOff(humidPercentage, minHumidPercentage, "-", 10);
+  	ledOnOff(tempValue, maxTempC, "+", 9);
+  	ledOnOff(luxValue, minLuxValue, "-", 8);
+  
+  	// Store both values from sprintf function to be converted
+  	// later to strings
+  	char finalChar1[15] = "";
+  	char finalChar2[15] = "";
+  	
+  	// Grab all sensor values and fuse them into a char array
+  	sprintf(finalChar1, "%d%% %dC %dklux", humidPercentage, tempValue, luxValue);
+  	// Grab all regulator values and fuse them into a char array
+  	sprintf(finalChar2, "%d%% %dC %dklux", minHumidPercentage, maxTempC, minLuxValue);
+  
+  	// Convert the char arrays into single strings
+  	initString1 = (finalChar1);
+  	initString2 = (finalChar2);	
+  
+  	// Compare if there were changes to the lenght of the string
+  	// just for LCD display debugging
+  	if (finalString1.length() > initString1.length() || finalString2.length() > initString2.length())
+    {
+        lcd.clear();
+    }
+  	
+  	// After debugged, finalStrings are rewritted for next loop
+  	finalString1 = initString1;
+  	finalString2 = initString2;
+  
+  	// Print the finalString1 value on LCD display
+  	lcd.print(finalString1);
+  
+  	// Set column to 0 and row to 1(which is the 2nd row)
+  	lcd.setCursor(0, 1);
+  
+  	// Print the finalString2 value on LCD display
+  	lcd.print(finalString2);
+  
+  	// Set column to 0 and row to 0(which is the 1st row)
+  	lcd.setCursor(0, 0);
+  
+    StaticJsonDocument<89> json; // Set JSON buffer and size
+
+    json["humidPercentage"] = humidPercentage;
+    json["tempSens"] = tempValue;
+    json["luxValue"] = luxValue;
+    json["humidLed"] = digitalRead(10);
+    json["tempLed"] = digitalRead(9);
+    json["lightLed"] = digitalRead(8);
+    
+    String jsonString;
+    serializeJson(json, jsonString);
+    Serial.println(jsonString); // Send JSON content via serial monitor
+
+  	// Delay the code to keep stability
+  	delay(200);
+}
+
+// Convert the sensor value to lumens
+int sensorRawToLumens(int raw){
+  
+  // Convert analog signal to resistance
+  float vout = float(raw) * (5 / float(1023));
+  
+  // Convert resistênce to voltage
+  float rLDR = (1000 * (5 - vout)) / vout;
+  
+  // Convert voltage to lumens
+  int lum = 500 /(rLDR / 1000);
+  return lum;
+}
+
+// Convert lumens in kilolux
+int sensorRawToDaylight(int raw)
+{
+  return (sensorRawToLumens(raw)) / 100;
+}
+
+// Switches the specified led ON or OFF based on the values and 
+// condition chosen
+void ledOnOff(int a, int b, String biggerLesser, int led)
+{
+  // If "a" value needs to be lesser than "b" value 
+  if(biggerLesser == "+")
+  {
+    if (a >= b)
+    {
+    	digitalWrite(led, HIGH);
+    }
+    else
+    {
+      digitalWrite(led, LOW);
+    }
+  }
+  // If "a" value needs to be bigger than "b" value 
+  else if(biggerLesser == "-") 
+  {
+    if (a <= b)
+    {
+    	digitalWrite(led, HIGH);
+    }
+    else
+    {
+      	digitalWrite(led, LOW);
+    }
+  }
+}
